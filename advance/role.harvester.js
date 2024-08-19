@@ -1,6 +1,6 @@
 let roleHarvester = {
     run: function(creep) {
-        if(creep.store.getFreeCapacity()>0&&Game.getObjectById(creep.memory['source']).energy>0){
+        if(creep.store.getFreeCapacity()>0&&(Game.getObjectById(creep.memory['source'])&&Game.getObjectById(creep.memory['source']).energy>0)){
             if(creep.harvest(Game.getObjectById(creep.memory['source'])) == ERR_NOT_IN_RANGE) {
                 creep.moveTo(Game.getObjectById(creep.memory['source']),{visualizePathStyle:{stroke:'#ffaa00'}});
             }
@@ -15,7 +15,7 @@ let roleHarvester = {
         if(target) {
             creep.transfer(target, RESOURCE_ENERGY);
         }
-        if(creep.memory.time>10){
+        if(creep.memory.time>5){
             target = creep.pos.findClosestByRange(FIND_MY_CREEPS, {
                 filter: (creep) => {
                     return (creep.memory.role=='deliver'||creep.memory.role=='harvester')&&creep.store.getFreeCapacity()>0;

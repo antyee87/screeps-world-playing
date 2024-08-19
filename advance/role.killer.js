@@ -2,7 +2,7 @@ let roleKiller = {
     /** @param {Creep} creep **/
     run: function(creep) {
         let targets=[];
-        if(!ATTACK in creep.body)creep.suicide();
+        if(creep.getActiveBodyparts(ATTACK)==0&&creep.getActiveBodyparts(RANGED_ATTACK)==0)creep.suicide();
         for(let name in Game.rooms){
             let room=Game.rooms[name];
             let invader_cores = room.find(FIND_STRUCTURES, {
@@ -10,7 +10,10 @@ let roleKiller = {
                     return (structure.structureType == STRUCTURE_INVADER_CORE)
                 }
             });
-            let hostile_creeps = room.find(FIND_HOSTILE_CREEPS);
+            let hostile_creeps = room.find(FIND_HOSTILE_CREEPS,{filter:(creep)=>{
+                return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
+                }
+            });
             for(let i=0;i<invader_cores.length;i++){
                 targets.push(invader_cores[i].id);
             }
@@ -27,7 +30,10 @@ let roleKiller = {
                 creep.moveTo(Game.getObjectById(targets[0]), {visualizePathStyle: {stroke: '#ffffff'}});
             }
         }
+        else{
+                creep.moveTo(new RoomPosition(3,17,'W7N7'));
+        }
     }
 };
-//Game.spawns['Spawn1'].spawnCreep([ATTACK,ATTACK,ATTACK,ATTACK,MOVE,MOVE,MOVE,MOVE],'killer'+Game.time,{memory: {role:'killer',working:true}});
+//Game.spawns['Spawn1'].spawnCreep([MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK],'killer'+Game.time,{memory: {role:'killer',working:true}});
 module.exports = roleKiller;

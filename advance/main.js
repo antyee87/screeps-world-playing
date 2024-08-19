@@ -12,10 +12,31 @@ let towerOperation = require('tower_operation');
 let roomOccupied = require('room_occupied');
 
 module.exports.loop = function () {
+    for(let name in Game.rooms){
+        let room=Game.rooms[name];
+        let storage=room.storage;
+        if(storage){
+            room.visual.text(
+                '⚡'+storage.store[RESOURCE_ENERGY],
+                storage.pos.x+1,
+                storage.pos.y+0.2,
+                {align: 'left', opacity: 0.8}
+            )
+        }
+    }
     for(let creep_name in Game.creeps) {
         let creep = Game.creeps[creep_name];
         if(creep.memory.role&&creep.memory.role=='harvester'){
             creep.memory['targeted']=0;
+        }
+    }
+    for(let creep_name in Game.creeps) {
+        let creep = Game.creeps[creep_name];
+        if(creep.memory.role&&creep.memory.role=='deliver'){
+            if(creep.memory.customer){
+                let customer=Game.getObjectById(creep.memory.customer);
+                if(customer)customer.memory.targeted++;
+            }
         }
     }
     towerOperation.run();
@@ -27,14 +48,15 @@ module.exports.loop = function () {
         spawn.room.visual.text(
             spawn.room.energyAvailable+'/'+spawn.room.energyCapacityAvailable,
             spawn.pos.x,
-            spawn.pos.y+2,
+            spawn.pos.y+3,
             {align: 'center', opacity: 0.8}
         );
     }
     if(Game.spawns['Spawn1'].spawning) {
         let spawningCreep = Game.creeps[Game.spawns['Spawn1'].spawning.name];
+        let process =(1-Game.spawns['Spawn1'].spawning.remainingTime/Game.spawns['Spawn1'].spawning.needTime)*100
         Game.spawns['Spawn1'].room.visual.text(
-            '🛠️' + spawningCreep.memory.role,
+            '🛠️' + spawningCreep.memory.role+'('+process.toFixed(1)+'%)',
             Game.spawns['Spawn1'].pos.x + 1,
             Game.spawns['Spawn1'].pos.y,
             {align: 'left', opacity: 0.8}
@@ -55,11 +77,18 @@ module.exports.loop = function () {
             creep.moveTo(exit, {visualizePathStyle: {stroke: '#ffffff'}});
         }
         else{
-            if(creep.memory.role)creep.say(creep.memory.role);
+            let kit_icon={
+                harvester:'⛏️',
+                upgrader:'🆙',
+                builder:'🧱',
+                repairer:'🩹',
+                killer:'🗡️',
+                deliver:'📦'
+            }
+            if(creep.memory.role)creep.say(kit_icon[creep.memory.role]);
             else if(creep.memory.explore) creep.say(creep.memory.explore,true);
             if(creep.memory.explore){
                 roleExplorer.run(creep);
-                continue;
             }
             if(creep.memory.working){
                 let role=creep.memory.role;
@@ -85,20 +114,25 @@ module.exports.loop = function () {
                 }
             }
             else{
-                if(creep.room.controller.owner&&!Memory.creep_respawn){
+                if(creep.room.controller.owner&&(!Memory.creep_respawn||(creep.room.storage&&creep.room.storage.store[RESOURCE_ENERGY]>0))){
                     roleUpgrader.run(creep);
                 }
                 else{
-                    let target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                        filter: (structure) => {
-                            return (structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION) &&
-                                structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+                    if(creep.store[RESOURCE_ENERGY]>0){
+                        let target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+                            filter: (structure) => {
+                                return (structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION) &&
+                                    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
+                            }
+                        });
+                        if(target) {
+                            if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                                creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+                            }
                         }
-                    });
-                    if(target) {
-                        if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
-                        }
+                    }
+                    else{
+                        creep.moveTo(new RoomPosition(3,17,'W7N7'));
                     }
                 }
             }

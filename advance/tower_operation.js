@@ -10,9 +10,11 @@ let towerOperation={
                     continue;
                 }
                 let damaged_structures = tower.room.find(FIND_STRUCTURES, {
-                    filter: (structure) => structure.hits < structure.hitsMax
+                    filter: (structure) => {
+                        return structure.hits < structure.hitsMax&&structure.hits<500000;
+                    }
                 });
-                if(damaged_structures) {
+                if(damaged_structures.length>0) {
                     let structures_hits=[];
                     for(let i=0;i<damaged_structures.length;i++){
                         structures_hits.push({id:damaged_structures[i].id,hits:damaged_structures[i].hits});

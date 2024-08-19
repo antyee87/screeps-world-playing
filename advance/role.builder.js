@@ -9,7 +9,7 @@ let roleBuilder = {
         if(creep.memory.building) {
             let targets=[];
             for(let name in Game.rooms){
-                let sites=(Game.rooms[name].find(FIND_CONSTRUCTION_SITES));
+                let sites=( Game.rooms[name].find(FIND_CONSTRUCTION_SITES));
                 for(let i=0;i<sites.length;i++){
                     if(sites[i].structureType==STRUCTURE_TOWER)
                     {
@@ -33,16 +33,20 @@ let roleBuilder = {
             }
         }
         else {
-            let target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
+            let targets = creep.room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType==STRUCTURE_STORAGE||structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION) &&
                         structure.store[RESOURCE_ENERGY] >=50;
                 }
             });
-            if(target&&!Memory.creep_respawn) {
-                if(creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
+            targets.sort((a,b)=>b.store[RESOURCE_ENERGY]-a.store[RESOURCE_ENERGY]);
+            if(targets.length>0&&(!Memory.creep_respawn||(creep.room.storage&&creep.room.storage.store[RESOURCE_ENERGY]>0))) {
+                if(creep.withdraw(targets[0], RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                    creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
                 }
+            }
+            else{
+                creep.moveTo(new RoomPosition(3,17,'W7N7'));
             }
         }
     }
