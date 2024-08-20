@@ -9,7 +9,6 @@ let roleCourier={
             creep.memory.deliver=false;
             creep.memory.destination=null;
         }
-        
         if(creep.memory.deliver){
             creep.memory.time++;
             let destination=Game.getObjectById(creep.memory.destination);
@@ -17,10 +16,7 @@ let roleCourier={
                 for(const resourceType in creep.carry) {
                     if(destination.store.getFreeCapacity(resourceType)>0){
                         if(creep.transfer(destination, resourceType) == ERR_NOT_IN_RANGE) {
-                            let result = creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'}});
-                            if(result==OK){
-                                creep.memory.time=0;
-                            }
+                            creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'}});
                         }
                         else{
                             break;
@@ -54,14 +50,15 @@ let roleCourier={
                 }
                 creep.moveTo(new RoomPosition(3,17,'W7N7'));
             }
-            if(creep.memory.time>3){
+            if(creep.memory.time>5){
                 let target = creep.pos.findClosestByRange(FIND_MY_CREEPS, {
                     filter: (creep) => {
                         return creep.memory.role!='harvester'&&creep.store.getFreeCapacity()>0;
                     }
                 });
                 if(target) {
-                    if(creep.transfer(target, RESOURCE_ENERGY)==OK)creep.memory.time=0;
+                    creep.transfer(target, RESOURCE_ENERGY);
+                    creep.memory.time=0;
                 }
             }
         }
@@ -70,9 +67,8 @@ let roleCourier={
             if(!customer){
                 let targets =_.filter(Game.creeps,(target)=>target.memory.role == 'harvester'&&target.memory.targeted<Memory.harvester_courier_rate);
                 targets.sort((a,b)=>{
-                    if(b.store[RESOURCE_ENERGY]==a.store[RESOURCE_ENERGY])return b.memory.path_length-a.memory.path_length;
+                    if(b.store[RESOURCE_ENERGY]==a.store[RESOURCE_ENERGY])b.memory.path_length-a.memory.path_length;
                     return b.store[RESOURCE_ENERGY]-a.store[RESOURCE_ENERGY];
-                    
                 });
                 if(targets.length>0){
                     targets[0].memory.targeted++;
@@ -111,10 +107,10 @@ let roleCourier={
                         creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
                     }
                     return;
-                }            
-                if(customer.store[RESOURCE_ENERGY]==0){
+                }
+
+                if(customer.store[RESOURCE_ENERGY]<10){
                     creep.memory.customer=null;
-                    creep.moveTo(new RoomPosition(3,17,'W7N7'));
                 }
                 else{
                     creep.moveTo(customer, {visualizePathStyle: {stroke: '#ffffff'}});

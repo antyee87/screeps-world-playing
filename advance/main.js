@@ -1,11 +1,13 @@
 let roleHarvester = require('role.harvester');
 let roleUpgrader = require('role.upgrader');
 let roleBuilder = require('role.builder');
+let roleCharger=require('role.charger');
+let roleCourier=require('role.courier');
 let roleRepairer=require('role.repairer');
-let roleDeliver=require('role.deliver');
 
 let roleExplorer=require('role.explorer');
 let roleKiller=require('role.killer');
+let roleCleaner=require('role.cleaner');
 
 let gameOperation = require('game_operation');
 let towerOperation = require('tower_operation');
@@ -38,12 +40,15 @@ module.exports.loop = function () {
         let creep = Game.creeps[creep_name];
         if(creep.memory.role&&creep.memory.role=='harvester'){
             creep.memory['targeted']=0;
-            creep.memory['path_length']=0;
+            if(!creep.memory['path_length'])creep.memory['path_length']=0;
+        }
+        if(creep.memory.explore && !creep.memory.role){
+            if(!creep.memory['path_length'])creep.memory['path_length']=0;
         }
     }
     for(let creep_name in Game.creeps) {
         let creep = Game.creeps[creep_name];
-        if(creep.memory.role&&creep.memory.role=='deliver'){
+        if(creep.memory.role&&creep.memory.role=='courier'){
             if(creep.memory.customer){
                 let customer=Game.getObjectById(creep.memory.customer);
                 if(customer)customer.memory.targeted++;
@@ -51,8 +56,8 @@ module.exports.loop = function () {
         }
     }
     towerOperation.run();
-    roomOccupied.run();
     Memory.creep_respawn=gameOperation.creep_respawn();
+    if(!Memory.creep_respawn)roomOccupied.run();
     let targets=[];
     for(let name in Game.spawns){
         let spawn=Game.spawns[name];
@@ -80,25 +85,23 @@ module.exports.loop = function () {
             let sources=gameOperation.source_distribute().sources;
             creep.memory['source']=sources[Math.floor(Math.random()*sources.length)];
         }
-        if(creep.memory.working==false&&creep.room!=Game.spawns['Spawn1'].room){
-            creep.say('back home');
-            const exitDir=creep.room.findExitTo(Game.spawns['Spawn1'].room);
-            const exit = creep.pos.findClosestByRange(exitDir);
-            creep.moveTo(exit, {visualizePathStyle: {stroke: '#ffffff'}});
-        }
         else{
             let kit_icon={
                 harvester:'⛏️',
                 upgrader:'🆙',
                 builder:'🧱',
                 repairer:'🩹',
+                charger:'🔋',
                 killer:'🗡️',
-                deliver:'📦'
+                courier:'📦',
+                cleaner:'🧹'
             }
-            if(creep.memory.role)creep.say(kit_icon[creep.memory.role]);
+            if(creep.memory.role && creep.memory.role in kit_icon)creep.say(kit_icon[creep.memory.role]);
+            else if(creep.memory.role)creep.say(creep.memory.role);
             else if(creep.memory.explore) creep.say(creep.memory.explore,true);
             if(creep.memory.explore){
                 roleExplorer.run(creep);
+                continue;
             }
             if(creep.memory.working){
                 let role=creep.memory.role;
@@ -112,38 +115,36 @@ module.exports.loop = function () {
                     case 'builder':
                         roleBuilder.run(creep);
                         break;
-                    case 'repairer':
-                        roleRepairer.run(creep);
+                    case 'charger':
+                        roleCharger.run(creep);
                         break;
                     case 'killer':
                         roleKiller.run(creep);
                         break;
-                    case 'deliver':
-                        roleDeliver.run(creep);
+                    case 'cleaner':
+                        roleCleaner.run(creep);
+                        break;
+                    case 'courier':
+                        roleCourier.run(creep);
+                        break;
+                    case 'repairer':
+                        roleRepairer.run(creep);
+                        break;
+                    case 'occupier':
+                        //Game.spawns['Spawn1'].spawnCreep([MOVE,CLAIM],'occupier'+Game.time,{memory:{role:'occupier',working:true,explore:'W8N7'}});
+                        if(!creep.room.controller.my){
+                            if(creep.room.controller){
+                                if(creep.claimController(creep.room.controller)==ERR_NOT_IN_RANGE){
+                                    creep.moveTo(creep.room.controller,{visualizePathStyle: {stroke: '#ffffff'}})
+                                }
+                            }
+                        }
                         break;
                 }
             }
             else{
-                if(creep.room.controller.owner&&(!Memory.creep_respawn||(creep.room.storage&&creep.room.storage.store[RESOURCE_ENERGY]>0))){
+                if(creep.room.controller.my){
                     roleUpgrader.run(creep);
-                }
-                else{
-                    if(creep.store[RESOURCE_ENERGY]>0){
-                        let target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                            filter: (structure) => {
-                                return (structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION) &&
-                                    structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0;
-                            }
-                        });
-                        if(target) {
-                            if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                                creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
-                            }
-                        }
-                    }
-                    else{
-                        creep.moveTo(new RoomPosition(3,17,'W7N7'));
-                    }
                 }
             }
         }

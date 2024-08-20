@@ -5,29 +5,34 @@ let gameOperation={
                 delete Memory.creeps[name];
             }
         }
-        const kits=['upgrader','harvester','deliver','repairer','builder','killer'];
+        const kits=['upgrader','harvester','courier','charger','builder','killer','cleaner','repairer'];
         const total_sources=gameOperation.source_distribute().total_sources;
-        Memory.harvester_deliver_rate=3;
+        Memory.harvester_courier_rate=3;
         const limit={
             harvester:total_sources,
-            builder:4,
-            upgrader:2,
-            repairer:2,
-            deliver:total_sources*Memory.harvester_deliver_rate
+            builder:3,
+            upgrader:4,
+            charger:2,
+            repairer:1,
+            courier:total_sources*Memory.harvester_courier_rate
         }
+        gameOperation.room_distribute(limit['upgrader']);
         const body_type={
             harvester:'harvester_body',
-            builder:'default_body',
+            builder:'builder_body',
             upgrader:'default_body',
+            charger:'default_body',
             repairer:'default_body',
-            deliver:'deliver_body'
+            courier:'courier_body'
+        }
+        const body_content={
+            default_body:[WORK,WORK,WORK,CARRY,MOVE,MOVE],
+            builder_body:[WORK,WORK,CARRY,CARRY,MOVE,MOVE],
+            harvester_body:[WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE],
+            courier_body:[CARRY,CARRY,MOVE,MOVE]
         }
         let creeps={};
         let count={};
-        let default_body=[WORK,WORK,WORK,CARRY,MOVE,MOVE];
-        let harvester_body=[WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE];
-        let deliver_body=[CARRY,CARRY,CARRY,MOVE,MOVE,MOVE];
-
         let line=0;
         for(let kit of kits){
             if(kit=='harvester'){
@@ -57,23 +62,12 @@ let gameOperation={
                 line++;
             }
         }
-        if(count['deliver']*Memory.harvester_deliver_rate<count['harvester']){
+        if(count['courier']<count['harvester']*Memory.harvester_courier_rate){
             count['harvester']=limit['harvester'];
         }
         let respawn=false;
         for(let kit of kits){
-            let creep_body;
-            switch(body_type[kit]){
-                case 'harvester_body':
-                    creep_body=harvester_body;
-                    break;
-                case 'default_body':
-                    creep_body=default_body;
-                    break;
-                case 'deliver_body':
-                    creep_body=deliver_body;
-                    break;
-            }
+            let creep_body=body_content[body_type[kit]];
             if(respawn)continue;
             if(count[kit] < limit[kit]) {
                 let newName = kit + Game.time;
@@ -82,32 +76,27 @@ let gameOperation={
                 respawn=true;
             }
         }
-        let has_invader=false;
+        let invader_cores_count=0,hostile_creeps_count=0;
         for(let name in Game.rooms){
             let room=Game.rooms[name];
             let invader_cores = room.find(FIND_STRUCTURES, {
                 filter: (structure) => {
                     return (structure.structureType == STRUCTURE_INVADER_CORE)
                 }
-            })
-            if(invader_cores.length>0){
-                has_invader=true;
-                break;
-            }
-        }
-        for(let name in Game.rooms){
-            let room=Game.rooms[name];
+            });
             let hostile_creeps = room.find(FIND_HOSTILE_CREEPS,{filter:(creep)=>{
                 return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
                 }
             });
-            if(hostile_creeps.length>0){
-                has_invader=true;
-                break;
-            }
-        }    
-        if(has_invader&&count['killer']<1) {
+            
+            invader_cores_count+=invader_cores.length;
+            hostile_creeps_count+=hostile_creeps.length;
+        }
+        if(invader_cores_count>count['cleaner']) {
             Game.spawns['Spawn1'].spawnCreep([MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK],'killer'+Game.time,{memory: {role:'killer',working:true}});
+        }
+        else if(hostile_creeps_count>count['killer']) {
+            Game.spawns['Spawn1'].spawnCreep([TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,TOUGH,MOVE,MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK,HEAL],'killer'+Game.time,{memory: {role:'killer',working:true}});
         }
         return respawn;
     },
@@ -117,9 +106,9 @@ let gameOperation={
         let sources = [];
         let sources_used={};
         let total_sources=0;
-        for(let i=0;i<available_sources.length;i++){
-            sources_used[available_sources[i]]=0;
-            source=Game.getObjectById(available_sources[i]);
+        for(let id of available_sources){
+            sources_used[id]=0;
+            source=Game.getObjectById(id);
             if(source){
                 if(!source.room.id in available_rooms){
                     available_rooms.push(source.room.id);
@@ -130,34 +119,76 @@ let gameOperation={
         for(let creep of harvesters){
             sources_used[creep.memory.source]++;
         }
-        for(let i=0;i<available_sources.length;i++){
-            let source=Game.getObjectById(available_sources[i]);
+        for(let id of available_sources){
+            let source=Game.getObjectById(id);
             if(source){
                 let posX=source.pos.x;
                 let posY=source.pos.y;
                 let sources_weight=0;
-                const terrain = new Room.Terrain(source.room.name);
                 for(let x=-1;x<=1;x++){
                     for(let y=-1;y<=1;y++){
-                        if(terrain.get(posX+x,posY+y)!=1){
-                            sources_weight++;
+                        const look = source.room.lookAt(new RoomPosition(source.pos.x+x,source.pos.y+y,source.room.name));
+                        for(let object of look){
+                            if(object.type=='terrain'){
+                                if(object.terrain!='wall'){
+                                    sources_weight++;
+                                    break;
+                                }
+                            }
+                            if(object.type=='structure'){
+                                let has_road=false;
+                                for(let i in object.structure){
+                                    if(object.structure[i]=='road'){
+                                        sources_weight++;
+                                        has_road=true;
+                                        break;
+                                    }
+                                }
+                                if(has_road)break;
+                            }
                         }
                     }
                 }
                 if(sources_weight>3)sources_weight=3;
                 total_sources+=sources_weight;
-                sources_weight-=sources_used[available_sources[i]];
+                sources_weight-=sources_used[id];
                 for(let j=0;j<sources_weight;j++){
-                    sources.push(available_sources[i]);
+                    sources.push(id);
                 }
             }
         }
-        
         const return_object={
             total_sources:total_sources,
             sources:sources,
         };
         return return_object;
+    },
+    room_distribute:function(upgrader_limit){
+        let my_controllers=[];
+        let controller_upgrader_count={};
+        for(let name in Game.rooms){
+            let room = Game.rooms[name];
+            if(room.controller.my){
+                my_controllers.push(room.controller.id);
+                controller_upgrader_count[room.controller.id]=0;
+            }
+        }
+        let upgrader=_.filter(Game.creeps,(creep)=>creep.memory.role=='upgrader');
+        for(let creep of upgrader){
+            if(creep.memory.upgrade_controller){
+                controller_upgrader_count[creep.memory.upgrade_controller]++;
+            }
+        }
+        for(let creep of upgrader){
+            if(!creep.memory.upgrade_controller){
+                for(let controller of my_controllers){
+                    if(controller_upgrader_count[controller]<upgrader_limit/my_controllers.length){
+                        creep.memory.upgrade_controller=controller;
+                        controller_upgrader_count[controller]++;
+                    }
+                }
+            }
+        }
     }
 };
 module.exports = gameOperation;

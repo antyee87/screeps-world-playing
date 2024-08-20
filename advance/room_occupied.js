@@ -1,6 +1,6 @@
 let roomOccupied={
     run:function(){
-        let occupied_rooms=['W8N7','W7N6','W6N7','W9N7'];
+        let occupied_rooms=['W7N6','W6N7','W9N7'];
         let has_explorer={};
         for(let name of occupied_rooms){
             has_explorer[name]=false;
@@ -9,7 +9,7 @@ let roomOccupied={
             let creep=Game.creeps[name];
             if(creep.memory.explore&&!creep.memory.role){
                 if(creep.memory.path_length){
-                    if(creep.ticksToLive>creep.memory.path_length*1.4){
+                    if(creep.ticksToLive>creep.memory.path_length*1.7){
                         has_explorer[Game.creeps[name].memory.explore]=true;
                     }
                 }
