@@ -23,11 +23,22 @@ module.exports.loop = function () {
                 {align: 'left', opacity: 0.8}
             )
         }
+        let controller=room.controller;
+        if(controller&&controller.my){
+            let progress=(controller.progress/controller.progressTotal)*100;
+            room.visual.text(
+                '🏃'+progress.toFixed(3)+'%',
+                controller.pos.x+1,
+                controller.pos.y+0.2,
+                {align: 'left', opacity: 0.8}
+            )
+        }
     }
     for(let creep_name in Game.creeps) {
         let creep = Game.creeps[creep_name];
         if(creep.memory.role&&creep.memory.role=='harvester'){
             creep.memory['targeted']=0;
+            creep.memory['path_length']=0;
         }
     }
     for(let creep_name in Game.creeps) {
@@ -69,7 +80,6 @@ module.exports.loop = function () {
             let sources=gameOperation.source_distribute().sources;
             creep.memory['source']=sources[Math.floor(Math.random()*sources.length)];
         }
-        
         if(creep.memory.working==false&&creep.room!=Game.spawns['Spawn1'].room){
             creep.say('back home');
             const exitDir=creep.room.findExitTo(Game.spawns['Spawn1'].room);

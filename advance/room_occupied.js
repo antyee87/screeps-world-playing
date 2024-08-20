@@ -1,16 +1,26 @@
 let roomOccupied={
     run:function(){
-        let occupied_rooms=['W8N7','W7N6','W6N7'];
-        for(let i=0 ;i<occupied_rooms.length;i++){
-            let has_explorer=false;
-            for(let name in Game.creeps){
-                if(Game.creeps[name].memory.explore==occupied_rooms[i]&&Game.creeps[name].ticksToLive>100){
-                    has_explorer=true;
-                    break;
+        let occupied_rooms=['W8N7','W7N6','W6N7','W9N7'];
+        let has_explorer={};
+        for(let name of occupied_rooms){
+            has_explorer[name]=false;
+        }
+        for(let name in Game.creeps){
+            let creep=Game.creeps[name];
+            if(creep.memory.explore&&!creep.memory.role){
+                if(creep.memory.path_length){
+                    if(creep.ticksToLive>creep.memory.path_length*1.4){
+                        has_explorer[Game.creeps[name].memory.explore]=true;
+                    }
+                }
+                else{
+                    has_explorer[Game.creeps[name].memory.explore]=true;
                 }
             }
-            if(!has_explorer){
-                Game.spawns['Spawn1'].spawnCreep([MOVE],'explorer'+Game.time,{memory: {explore:occupied_rooms[i],working:true}});
+        }
+        for(let name of occupied_rooms){
+            if(!has_explorer[name]){
+                Game.spawns['Spawn1'].spawnCreep([MOVE],'explorer'+Game.time,{memory: {explore:name,working:true}});
             }
         }
     }

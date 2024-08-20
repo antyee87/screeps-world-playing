@@ -1,11 +1,11 @@
 let roleDeliver={
     run:function(creep){
-        if(!creep.memory.deliver&&creep.store.getFreeCapacity(RESOURCE_ENERGY) == 0){
+        if(!creep.memory.deliver&&creep.store.getFreeCapacity() == 0){
             creep.memory.customer=null;
             creep.memory.time=0;
             creep.memory.deliver=true;
         }
-        if(creep.memory.deliver&&creep.store[RESOURCE_ENERGY] == 0){
+        if(creep.memory.deliver&&creep.store.getUsedCapacity() == 0){
             creep.memory.deliver=false;
             creep.memory.destination=null;
         }
@@ -14,13 +14,18 @@ let roleDeliver={
             creep.memory.time++;
             let destination=Game.getObjectById(creep.memory.destination);
             if(destination){
-                if(destination.store.getFreeCapacity(RESOURCE_ENERGY)>0){
-                    if(creep.transfer(destination, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                        creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'}});
-                    } 
-                }
-                else{
-                    creep.memory.destination=null;
+                for(const resourceType in creep.carry) {
+                    if(destination.store.getFreeCapacity(resourceType)>0){
+                        if(creep.transfer(destination, resourceType) == ERR_NOT_IN_RANGE) {
+                            creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'}});
+                        }
+                        else{
+                            break;
+                        }
+                    }
+                    else{
+                        creep.memory.destination=null;
+                    }
                 }
             }
             else{

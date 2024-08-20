@@ -10,9 +10,9 @@ let gameOperation={
         Memory.harvester_deliver_rate=3;
         const limit={
             harvester:total_sources,
-            builder:2,
-            upgrader:1,
-            repairer:3,
+            builder:4,
+            upgrader:2,
+            repairer:2,
             deliver:total_sources*Memory.harvester_deliver_rate
         }
         const body_type={
@@ -24,16 +24,18 @@ let gameOperation={
         }
         let creeps={};
         let count={};
-        //let default_body=[WORK,,WORK,CARRY,CARRY,MOVE,MOVE];
-        let default_body=[WORK,WORK,CARRY,MOVE];
-        //let harvester_body=[WORK,WORK,WORK,CARRY,MOVE,MOVE];
-        let harvester_body=[WORK,WORK,CARRY,CARRY,MOVE];
-        //let deliver_body=[CARRY,CARRY,MOVE,MOVE,MOVE,MOVE];
-        let deliver_body=[CARRY,CARRY,MOVE,MOVE,MOVE,MOVE];
+        let default_body=[WORK,WORK,WORK,CARRY,MOVE,MOVE];
+        let harvester_body=[WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE];
+        let deliver_body=[CARRY,CARRY,CARRY,MOVE,MOVE,MOVE];
 
         let line=0;
         for(let kit of kits){
-            creeps[kit] =_.filter(Game.creeps,(creep)=>creep.memory.role==kit&&creep.ticksToLive>100);
+            if(kit=='harvester'){
+                creeps[kit] =_.filter(Game.creeps,(creep)=>creep.memory.role==kit&&creep.ticksToLive>creep.memory.path_length*1.4);
+            }
+            else{
+                creeps[kit] =_.filter(Game.creeps,(creep)=>creep.memory.role==kit&&creep.ticksToLive>50);
+            }
             count[kit]=creeps[kit].length;
             if(count[kit]>0||limit[kit]>0){
                 if(limit[kit]>0){
@@ -110,8 +112,7 @@ let gameOperation={
         return respawn;
     },
     source_distribute:function(){
-        //,'1db807721502822','025e07727e00363'
-        const available_sources=['33bd077274d064f','68a2077274dcb77','1db807721502822','c6ee0772d9884c3','025e07727e00363'];
+        const available_sources=['33bd077274d064f','68a2077274dcb77','1db807721502822','c6ee0772d9884c3','025e07727e00363','6bfc07721507fca','1dd2077197120a2'];
         let available_rooms=[];
         let sources = [];
         let sources_used={};
@@ -125,11 +126,9 @@ let gameOperation={
                 }
             }
         }
-        let harvesters= _.filter(Game.creeps,(creep)=>creep.memory.role=='harvester'&&creep.ticksToLive>100);
+        let harvesters= _.filter(Game.creeps,(creep)=>creep.memory.role=='harvester'&&creep.ticksToLive>creep.memory.path_length*1.4);
         for(let creep of harvesters){
-            if(creep.memory.role=='harvester'&&creep.ticksToLive>100){
-                sources_used[creep.memory.source]+=1;
-            }
+            sources_used[creep.memory.source]++;
         }
         for(let i=0;i<available_sources.length;i++){
             let source=Game.getObjectById(available_sources[i]);
@@ -141,7 +140,7 @@ let gameOperation={
                 for(let x=-1;x<=1;x++){
                     for(let y=-1;y<=1;y++){
                         if(terrain.get(posX+x,posY+y)!=1){
-                            sources_weight+=1;
+                            sources_weight++;
                         }
                     }
                 }

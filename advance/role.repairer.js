@@ -26,6 +26,9 @@ let roleRepairer = {
                     creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
                 }
             }
+            else{
+                creep.moveTo(new RoomPosition(23,8,'W7N7'));
+            }
         }
     }
 };

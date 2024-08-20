@@ -9,7 +9,7 @@ let roleBuilder = {
         if(creep.memory.building) {
             let targets=[];
             for(let name in Game.rooms){
-                let sites=( Game.rooms[name].find(FIND_CONSTRUCTION_SITES));
+                let sites= Game.rooms[name].find(FIND_CONSTRUCTION_SITES);
                 for(let i=0;i<sites.length;i++){
                     if(sites[i].structureType==STRUCTURE_TOWER)
                     {
@@ -24,7 +24,6 @@ let roleBuilder = {
                 let construction_site=Game.getObjectById(targets[0]);
                 creep.memory.working = true;
                 if(creep.build(construction_site) == ERR_NOT_IN_RANGE) {
-                    
                     creep.moveTo(construction_site, {visualizePathStyle: {stroke: '#ffffff'}});
                 }
             }

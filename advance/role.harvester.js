@@ -4,6 +4,9 @@ let roleHarvester = {
             if(creep.harvest(Game.getObjectById(creep.memory['source'])) == ERR_NOT_IN_RANGE) {
                 creep.moveTo(Game.getObjectById(creep.memory['source']),{visualizePathStyle:{stroke:'#ffaa00'}});
             }
+            else if(creep.memory.path_length==0){
+                creep.memory.path_length=Game.spawns['Spawn1'].pos.findPathTo(creep,{ignoreCreeps:true,ignoreDestructibleStructures:true,ignoreRoads:true}).length;
+            }
             creep.memory.time=0;
         }
         creep.memory.time++;

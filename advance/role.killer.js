@@ -11,7 +11,7 @@ let roleKiller = {
                 }
             });
             let hostile_creeps = room.find(FIND_HOSTILE_CREEPS,{filter:(creep)=>{
-                return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
+                return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0||(creep.getActiveBodyparts(CARRY)>0&&creep.store[RESOURCE_ENERGY>0]));
                 }
             });
             for(let i=0;i<invader_cores.length;i++){
