@@ -30,7 +30,7 @@ let roleUpgrader = {
                 }
             }
             else{
-                creep.moveTo(new RoomPosition(3,17,'W7N7'));
+                creep.moveTo(Game.spawns['Spawn1']);
             }
         }
     }

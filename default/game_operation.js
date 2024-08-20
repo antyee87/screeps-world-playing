@@ -5,13 +5,13 @@ var gameOperation={
                 delete Memory.creeps[name];
             }
         }
-        var kits=['upgrader','harvester','builder','collector','repairer','killer','explorer'];
+        var kits=['upgrader','harvester','builder','collector','charger','killer','explorer'];
         var limit={
             harvester:10,
             builder:1,
             upgrader:1,
             collector:0,
-            repairer:2
+            charger:2
         }
         var creeps={};
         var count={};
@@ -21,7 +21,7 @@ var gameOperation={
         for(var i=0;i<kits.length;i++){
             creeps[kits[i]] =_.filter(Game.creeps,(creep)=>creep.memory.role == kits[i]);
             count[kits[i]]=creeps[kits[i]].length
-            if(count[kits[i]]>0){
+            if(count[kits[i]]>0||limit[kits[i]]>0){
                 if(limit[kits[i]]>0){
                     Game.spawns['Spawn1'].room.visual.text(
                         kits[i]+":" + count[kits[i]]+'/'+limit[kits[i]],

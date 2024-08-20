@@ -2,7 +2,7 @@ var roleHarvester = require('role.harvester');
 var roleUpgrader = require('role.upgrader');
 var roleBuilder = require('role.builder');
 var roleCollector=require('role.collector');
-var roleRepairer=require('role.repairer');
+var roleCharger=require('role.charger');
 var roleExplorer=require('role.explorer');
 var roleKiller=require('role.killer');
 
@@ -12,7 +12,7 @@ var roomOccupied = require('room_occupied');
 
 module.exports.loop = function () {
     towerOperation.run();
-    roomOccupied.run();
+    //roomOccupied.run();
     gameOperation.creep_respawn();
     let targets=[];
     for(var name in Game.spawns){
@@ -49,13 +49,6 @@ module.exports.loop = function () {
             creep.memory['origin_source']=creep.memory['source'];
             creep.memory['source']=sources[Math.floor(Math.random()*sources.length)];
         }
-        
-        if(creep.memory.working==false&&creep.room!=Game.spawns['Spawn1'].room){
-            creep.say('back home');
-            const exitDir=creep.room.findExitTo(Game.spawns['Spawn1'].room);
-            const exit = creep.pos.findClosestByRange(exitDir);
-            creep.moveTo(exit, {visualizePathStyle: {stroke: '#ffffff'}});
-        }
         else{
             creep.say(creep.memory.role);
             if(creep.memory.working){
@@ -73,8 +66,8 @@ module.exports.loop = function () {
                     case 'collector':
                         roleCollector.run(creep);
                         break;
-                    case 'repairer':
-                        roleRepairer.run(creep);
+                    case 'charger':
+                        roleCharger.run(creep);
                         break;
                     case 'explorer':
                         roleExplorer.run(creep);

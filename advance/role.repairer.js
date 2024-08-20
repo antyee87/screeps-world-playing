@@ -21,13 +21,8 @@ let roleRepairer = {
                             creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
                         }
                     }
-                    else{
-                        creep.moveTo(new RoomPosition(3,17,'W7N7'));
-                    }
-                    
                 }
             }
-            
         }
         else{
             let targets = creep.room.find(FIND_STRUCTURES, {
