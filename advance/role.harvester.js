@@ -4,8 +4,7 @@ let roleHarvester = {
         if(source){
             if(creep.store.getFreeCapacity(RESOURCE_ENERGY)>0&&source.energy>0){
                 if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
-                    creep.memory.path_length++;
-                    creep.moveTo(source,{visualizePathStyle:{stroke:'#ffaa00'}});
+                    creep.moveTo(source,{visualizePathStyle:{stroke:'#ffffff'}});
                 }
             }
         }

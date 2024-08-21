@@ -1,9 +1,18 @@
 let towerOperation={
     run:function(){
-        let towers=['66c1b66cd2e34a894c2e160b','66c43544018b87894bff3615'];
-        for(let i=0;i<towers.length;i++){
-            let tower = Game.getObjectById(towers[i]);
-            if(tower) {
+        for(let name in Game.rooms){
+            let room=Game.rooms[name];
+            let towers=room.find(FIND_STRUCTURES,{filter:{structureType:STRUCTURE_TOWER,my:true}});
+            for(let tower of towers){
+                let damaged_creep = tower.pos.findClosestByRange(FIND_MY_CREEPS, {
+                    filter: (creep) => {
+                        return creep.hits < creep.hitsMax;
+                    }
+                });
+                if(damaged_creep) {
+                    tower.heal(damaged_creep);
+                    continue;
+                }
                 let closest_hostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
                 if(closest_hostile) {
                     tower.attack(closest_hostile);
@@ -22,16 +31,6 @@ let towerOperation={
                     }   
                     structures_hits.sort((a, b) => a.hits - b.hits);
                     tower.repair(Game.getObjectById(structures_hits[0].id));
-                    continue;
-                }
-                
-                let damaged_creep = tower.pos.findClosestByRange(FIND_MY_CREEPS, {
-                    filter: (creep) => {
-                        return creep.hits < creep.hitsMax;
-                    }
-                });
-                if(damaged_creep) {
-                    tower.heal(damaged_creep);
                     continue;
                 }
             }

@@ -29,7 +29,9 @@ let roleCleaner = {
                 }
             }
         }
-        creep.moveTo(new RoomPosition(3,17,'W7N7'));
+        if(Game.spawns['Spawn1'].recycleCreep(creep)==ERR_NOT_IN_RANGE){
+            creep.moveTo(Game.spawns['Spawn1']);
+        }
     }
 };
 module.exports = roleCleaner;

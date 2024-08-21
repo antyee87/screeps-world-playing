@@ -1,7 +1,6 @@
 let roleKiller = {
     /** @param {Creep} creep **/
     run: function(creep) {
-        if(creep.getActiveBodyparts(ATTACK)==0&&creep.getActiveBodyparts(RANGED_ATTACK)==0&&creep.getActiveBodyparts(HEAL)==0)creep.suicide();
         if(creep.hits<creep.hitsMax){
             creep.heal(creep);
         }
@@ -32,7 +31,9 @@ let roleKiller = {
                 }
             }
         }
-        creep.moveTo(new RoomPosition(3,17,'W7N7'));
+        if(Game.spawns['Spawn1'].recycleCreep(creep)==ERR_NOT_IN_RANGE){
+            creep.moveTo(Game.spawns['Spawn1']);
+        }
     }
 };
 module.exports = roleKiller;

@@ -16,10 +16,7 @@ let roleCourier={
                 for(const resourceType in creep.carry) {
                     if(destination.store.getFreeCapacity(resourceType)>0){
                         if(creep.transfer(destination, resourceType) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'}});
-                        }
-                        else{
-                            break;
+                            creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'},reusePath:50});
                         }
                     }
                     else{
@@ -67,7 +64,6 @@ let roleCourier={
             if(!customer){
                 let targets =_.filter(Game.creeps,(target)=>target.memory.role == 'harvester'&&target.memory.targeted<Memory.harvester_courier_rate);
                 targets.sort((a,b)=>{
-                    if(b.store[RESOURCE_ENERGY]==a.store[RESOURCE_ENERGY])b.memory.path_length-a.memory.path_length;
                     return b.store[RESOURCE_ENERGY]-a.store[RESOURCE_ENERGY];
                 });
                 if(targets.length>0){
@@ -85,7 +81,22 @@ let roleCourier={
                 }
             }
             else{
-                let target = creep.pos.findClosestByRange(FIND_TOMBSTONES, {filter:(tombstone)=> {return tombstone.store[RESOURCE_ENERGY] >0;}});
+                let hostile_creeps=creep.pos.findInRange(FIND_HOSTILE_CREEPS,10,{
+                    filter:(creep)=>{
+                        return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
+                    }
+                });
+                if(hostile_creeps.length>0){
+                    let spawn=creep.findClosestByRange(STRUCTURE_SPAWN);
+                    if(spawn.length>0){
+                        creep.moveTo(spawn);
+                    }
+                    else{
+                        creep.moveTo(new RoomPosition(3,17,'W7N7'));
+                    }
+                    return;
+                }
+                let target = creep.pos.findClosestByRange(FIND_TOMBSTONES, {filter:(tombstone)=> {return tombstone.store.getUsedCapacity() >0;}});
                 if(target) {
                     if(creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});
@@ -93,7 +104,7 @@ let roleCourier={
                     return;
                 }
                 
-                target = creep.pos.findClosestByRange(FIND_RUINS, {filter:(ruin)=> {return ruin.store[RESOURCE_ENERGY] >0;}});
+                target = creep.pos.findClosestByRange(FIND_RUINS, {filter:(ruin)=> {return ruin.store.getUsedCapacity() >0;}});
                 if(target) {
                     if(creep.withdraw(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
                         creep.moveTo(target, {visualizePathStyle: {stroke: '#ffffff'}});

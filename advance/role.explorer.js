@@ -5,12 +5,12 @@ let roleExplorer={
         }
         if(creep.room.name == creep.memory.explore && creep.memory.role){
             creep.moveTo(new RoomPosition(25,25,creep.memory.explore));
-            if(creep.pos.findPathTo(new RoomPosition(25,25,creep.memory.explore)).length<20){
+            if(creep.pos.findPathTo(new RoomPosition(25,25,creep.memory.explore)).length<24){
                 creep.memory.explore=null;
             }
         }
         
-        if(creep.room.name!=creep.memory.explore && !creep.memory.role){
+        if(creep.room.name != creep.memory.explore){
             creep.memory.path_length++;
         }
     }
