@@ -7,13 +7,16 @@ let roleWithdrawer={
             creep.memory.delivering=false;
         }
         if(creep.memory.delivering){
-            let target = creep.pos.findClosestByRange(FIND_STRUCTURES,(structure)=>{
-                return (structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION)&&structure.store.getFreeCapacity()>0;
-            })
-            if(targets.length>0){
+            let target = creep.pos.findClosestByRange(FIND_STRUCTURES,{filter:(structure)=>{
+                return (structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION)&&structure.store.getFreeCapacity(RESOURCE_ENERGY)>0;
+            }});
+            if(target){
                 if(creep.transfer(target,RESOURCE_ENERGY)==ERR_NOT_IN_RANGE){
                     creep.moveTo(target,{visualizePathStyle: {stroke: '#00ffff'}});
                 }
+            }
+            else{
+                creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
             }
         }
         else{

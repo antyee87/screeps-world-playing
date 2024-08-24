@@ -5,6 +5,7 @@ let roleCharger=require('role.charger');
 let roleCourier=require('role.courier');
 let roleRepairer=require('role.repairer');
 let roleWithdrawer=require('role.withdrawer');
+let roleBalancer=require('role.balancer');
 
 let roleExplorer=require('role.explorer');
 let roleKiller=require('role.killer');
@@ -15,6 +16,7 @@ let towerOperation = require('tower_operation');
 let roomOccupied = require('room_occupied');
 
 module.exports.loop = function () {
+    let store_energy=0;
     for(let name in Game.rooms){
         let room=Game.rooms[name];
         let storage=room.storage;
@@ -36,9 +38,38 @@ module.exports.loop = function () {
                 {align: 'left', opacity: 0.8}
             )
         }
+        let store_energy_containers= room.find(FIND_STRUCTURES,{filter:(structure)=>{
+            return (structure.structureType==STRUCTURE_CONTAINER||structure.structureType==STRUCTURE_STORAGE);
+        }});
+        for(let container of store_energy_containers){
+            store_energy+=container.store.getUsedCapacity(RESOURCE_ENERGY);
+        }
     }
+    if(Game.time%1500==0){
+        Memory.store_energy_history=Memory.store_energy;
+        Memory.store_energy=store_energy;
+    }
+    for(let name in Game.rooms){
+        let room=Game.rooms[name];
+        let flags= room.find(FIND_FLAGS,{filter:(flag)=>{
+            return flag.name.includes('display_store_energy');
+        }});
+        for(let flag of flags){
+            flag.room.visual.text(
+                store_energy+'(⚡'+((Memory.store_energy-Memory.store_energy_history)/1500).toFixed(3)+'/t)'+'['+(1500-(Game.time%1500))+']', 
+                flag.pos.x,
+                flag.pos.y+2, 
+                {align: 'center', opacity: 0.8}
+            ); 
+        }
+    }
+    
     for(let creep_name in Game.creeps) {
         let creep = Game.creeps[creep_name];
+        if(!creep.memory.return_spawn_name){
+            let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
+            if(spawn)creep.memory.return_spawn_name=spawn.name;
+        }
         if(creep.memory.role&&creep.memory.role=='harvester'){//採集者初始化
             creep.memory['targeted']=0;
         }
@@ -119,7 +150,10 @@ module.exports.loop = function () {
             charger:'🔋',
             killer:'🗡️',
             courier:'📦',
-            cleaner:'🧹'
+            cleaner:'🧹',
+            balancer:'⚖️',
+            withdrawer:'💵',
+            occupier:'🚩'
         }
         if(creep.memory.role && creep.memory.role in kit_icon)creep.say(kit_icon[creep.memory.role]);
         else if(creep.memory.role)creep.say(creep.memory.role);
@@ -168,6 +202,9 @@ module.exports.loop = function () {
                     break;
                 case 'withdrawer':
                     roleWithdrawer.run(creep);
+                    break;
+                case 'balancer':
+                    roleBalancer.run(creep);
                     break;
             }
         }

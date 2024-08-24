@@ -1,11 +1,12 @@
 let roleCourier={
     run:function(creep){
-        if(!creep.memory.delivering&&creep.store.getFreeCapacity() == 0){
+        if(!creep.memory.delivering&&creep.store.getFreeCapacity()==0){
             creep.memory.customer=null;
             creep.memory.time=0;
             creep.memory.delivering=true;
         }
         if(creep.memory.delivering&&creep.store.getUsedCapacity() == 0){
+            creep.memory.time=0;
             creep.memory.recycling=null;
             creep.memory.drops=null;
             creep.memory.delivering=false;
@@ -20,7 +21,7 @@ let roleCourier={
                 return;
             }
             else{
-                creep.moveTo(new RoomPosition(3,17,'W7N7'));
+                creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
                 return;
             }
         }
@@ -44,15 +45,16 @@ let roleCourier={
                 let target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
                     filter: (structure) => {
                         if(structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION){
-                            let has_free_capacity=true;
                             for(const resourceType in creep.store){
-                                if(structure.store.getFreeCapacity(resourceType)==0){
-                                    has_free_capacity=false;
-                                    break;
+                                if(!structure.store.getFreeCapacity(resourceType)||structure.store.getFreeCapacity(resourceType)==0){
+                                    return  false;
                                 }
                             }
-                            return  has_free_capacity ;
-                        }         
+                            return  true;
+                        }
+                        else{
+                            return false;
+                        }    
                     }
                 });
                 if(target) {
@@ -129,7 +131,7 @@ let roleCourier={
                 }
                 let targets =_.filter(Game.creeps,(target)=>target.memory.role == 'harvester'&&target.memory.targeted<Memory.harvester_courier_rate);
                 targets.sort((a,b)=>{
-                    return (b.store[RESOURCE_ENERGY]/Memory.source_path_length[creep.memory.return_spawn_name][b.memory.source])-(a.store[RESOURCE_ENERGY]/Memory.source_path_length[creep.memory.return_spawn_name][a.memory.source]);
+                    return (3*b.store[RESOURCE_ENERGY]/Memory.source_path_length[creep.memory.return_spawn_name][b.memory.source])-(3*a.store[RESOURCE_ENERGY]/Memory.source_path_length[creep.memory.return_spawn_name][a.memory.source]);
                 });
                 if(targets.length>0){
                     targets[0].memory.targeted++;

@@ -50,6 +50,7 @@ module.exports.loop = function () {
             creep.memory['source']=sources[Math.floor(Math.random()*sources.length)];
         }
         else{
+            if(!creep.memory.role)creep.memory.role='harvester';
             creep.say(creep.memory.role);
             if(creep.memory.working){
                 let role=creep.memory.role;
