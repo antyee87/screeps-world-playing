@@ -14,7 +14,7 @@ let roleCharger = {
                 }
             }
             else{
-                creep.moveTo(new RoomPosition(23,8,'W7N7'));
+                creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
             }
         }
         else {

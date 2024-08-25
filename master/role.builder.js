@@ -54,7 +54,7 @@ let roleBuilder = {
                 }
             }
             else{
-                creep.moveTo(new RoomPosition(3,17,'W7N7'));
+                creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
             }
         }
     }

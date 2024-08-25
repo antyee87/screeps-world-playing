@@ -26,7 +26,7 @@ var roleBalancer={
                     if(room.storage)storages.push(room.storage.id);
                 }
                 storages.sort((a,b)=>{
-                    Game.getObjectById(a).store[RESOURCE_ENERGY]-Game.getObjectById(b).store[RESOURCE_ENERGY];
+                    return Game.getObjectById(a).store[RESOURCE_ENERGY]-Game.getObjectById(b).store[RESOURCE_ENERGY];
                 });
                 creep.memory.source=storages[storages.length-1];
                 creep.memory.destination=storages[0];

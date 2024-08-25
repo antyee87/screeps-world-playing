@@ -62,6 +62,17 @@ module.exports.loop = function () {
                 {align: 'center', opacity: 0.8}
             ); 
         }
+        flags= room.find(FIND_FLAGS,{filter:(flag)=>{
+            return flag.name.includes('display_cpu');
+        }});
+        for(let flag of flags){
+            flag.room.visual.text(
+                Game.cpu.bucket, 
+                flag.pos.x,
+                flag.pos.y+2, 
+                {align: 'center', opacity: 0.8}
+            ); 
+        }
     }
     
     for(let creep_name in Game.creeps) {
@@ -126,7 +137,7 @@ module.exports.loop = function () {
         spawn.room.visual.text(
             spawn.room.energyAvailable+'/'+spawn.room.energyCapacityAvailable,
             spawn.pos.x,
-            spawn.pos.y+3,
+            spawn.pos.y+2,
             {align: 'center', opacity: 0.8}
         );
         if(spawn.spawning) {//顯示正在生成的creep的role與生成進度

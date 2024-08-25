@@ -1,5 +1,4 @@
 let roleKiller = {
-    /** @param {Creep} creep **/
     run: function(creep) {
         if(creep.hits<creep.hitsMax){
             creep.heal(creep);

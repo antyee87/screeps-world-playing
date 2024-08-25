@@ -32,7 +32,7 @@ let roleCourier={
                 for(const resourceType in creep.store) {
                     if(destination.store.getFreeCapacity(resourceType)>0){
                         if(creep.transfer(destination, resourceType) == ERR_NOT_IN_RANGE) {
-                            if(creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'}})==OK)creep.memory.time=0;
+                            if(creep.moveTo(destination, {visualizePathStyle: {stroke: '#ffffff'},reusePath:10})==OK)creep.memory.time=0;
                         }
                     }
                     else{

@@ -28,10 +28,12 @@ let gameOperation={
                     return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
                 }
             });
-            if(hostile_creeps.length>0)danger_couriers_count += room.find(FIND_MY_CREEPS,{filter:{Memory:{role:'courier'}}}).length;
+            if(hostile_creeps.length>0)danger_couriers_count += room.find(FIND_MY_CREEPS,{filter:{memory:{role:'courier'}}}).length;
+            
             invader_cores_count+=invader_cores.length;
             hostile_creeps_count+=hostile_creeps.length;
         }
+       
         if(hostile_creeps_count>0&&danger_couriers_count>0){//逃跑模式 避免大規模死傷
             Memory.run_away=true;
         }
@@ -39,14 +41,14 @@ let gameOperation={
 
         const kits=['killer','withdrawer','upgrader','harvester','courier','charger','builder','repairer','balancer','cleaner'];
         
-        Memory.harvester_courier_rate=3;//每隻採集者分幾隻搬運工
+        Memory.harvester_courier_rate=2.5;//每隻採集者分幾隻搬運工
         let limit={
             harvester:Memory.total_sources,
             builder:4,
-            upgrader:6,
+            upgrader:9,
             charger:towers_count,
             repairer:no_tower_rooms_count,
-            courier:Memory.total_sources*Memory.harvester_courier_rate,
+            courier:Math.round(Memory.total_sources*Memory.harvester_courier_rate),
             killer:hostile_creeps_count,
             cleaner:invader_cores_count,
             withdrawer:2,
@@ -150,7 +152,8 @@ let gameOperation={
                 }
             } 
         }
-        if(Game.time%20==0){
+        let unemployment_harvesters=_.filter(Game.creeps,(creep)=>creep.memory.role=='harvester'&&!creep.memory.source);
+        if(Game.time%20==0&&unemployment_harvesters.length>0){
             source_distribute_result=gameOperation.source_distribute();//能量點分配
             Memory.total_sources=source_distribute_result.total_sources;
             Memory.sources=source_distribute_result.sources;
@@ -197,7 +200,10 @@ let gameOperation={
             if(!Memory.source_path_length)Memory.source_path_length={};
             for(let source of available_sources){
                 if(!Memory.source_path_length[name])Memory.source_path_length[name]={};
-                if(!Memory.source_path_length[name][source])Memory.source_path_length[name][source]=findPathLength.find(Game.getObjectById(source).pos,Game.spawns[name].pos);
+                if(!Memory.source_path_length[name][source]){
+                    Memory.source_path_length[name][source]=findPathLength.find(Game.getObjectById(source).pos,Game.spawns[name].pos);
+                }
+            
             }
         }
         let sorted_sources={};
@@ -224,7 +230,7 @@ let gameOperation={
                 let posX=source.pos.x;
                 let posY=source.pos.y;
                 if(!source_weight[source.id])source_weight[source.id]=0;
-                for(let x=-1;x<=1;x++){
+                for(let x=-1;x<=1;x++){//計算可待格數
                     for(let y=-1;y<=1;y++){
                         const look = source.room.lookAt(new RoomPosition(posX+x,posY+y,source.room.name));
                         for(let object of look){

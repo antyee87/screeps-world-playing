@@ -1,5 +1,24 @@
 let roleUpgrader = {
     run: function(creep) {
+        if(!creep.memory.arrived){
+            if(creep.memory.upgrade_controller&&creep.room!=Game.getObjectById(creep.memory.upgrade_controller).room){
+                let containers = creep.room.find(FIND_STRUCTURES, {
+                    filter: (structure) => {
+                        return (structure.structureType==STRUCTURE_STORAGE||structure.structureType==STRUCTURE_SPAWN||structure.structureType==STRUCTURE_EXTENSION||structure.structureType==STRUCTURE_CONTAINER);
+                    }
+                });
+                let energy_amount=0;
+                if(containers.length>0){
+                    for(let container of containers){
+                        energy_amount+=container.store[RESOURCE_ENERGY];
+                    }   
+                }
+                if(energy_amount>=500)creep.memory.arrived=true;
+            }
+            else{
+                creep.memory.arrived=true;
+            }
+        }
         if(creep.memory.upgrading && creep.store[RESOURCE_ENERGY] == 0) {
             creep.memory.upgrading = false;
             creep.memory.working=true;
@@ -8,7 +27,7 @@ let roleUpgrader = {
             creep.memory.upgrading = true;
         }
 
-        if(creep.memory.upgrading) {
+        if(creep.memory.upgrading||!creep.memory.arrived) {
             let controller=Game.getObjectById(creep.memory.upgrade_controller);
             if(controller){
                 if(creep.upgradeController(controller) == ERR_NOT_IN_RANGE) {
