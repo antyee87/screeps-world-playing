@@ -8,16 +8,14 @@ let roleBuilder = {
         }
         if(creep.memory.building) {
             let targets=[];
-            for(let name in Game.rooms){
-                let sites= Game.rooms[name].find(FIND_CONSTRUCTION_SITES);
-                for(let site of sites){
-                    if(site.structureType==STRUCTURE_TOWER||site.structureType==STRUCTURE_WALL||site.structureType==STRUCTURE_RAMPART)
-                    {
-                        targets.unshift(site.id);
-                    }
-                    else{
-                        targets.push(site.id);
-                    }
+            for(let name in Game.constructionSites){
+                let site = Game.constructionSites[name];
+                if(site.structureType==STRUCTURE_TOWER||site.structureType==STRUCTURE_WALL||site.structureType==STRUCTURE_RAMPART)
+                {
+                    targets.unshift(site.id);
+                }
+                else{
+                    targets.push(site.id);
                 }
             }
             if(targets.length) {

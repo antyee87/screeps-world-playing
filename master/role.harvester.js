@@ -1,7 +1,7 @@
 let roleHarvester = {
     run: function(creep) {
         let source=Game.getObjectById(creep.memory['source']);
-        if(source){
+        if(source&&(!source.room.controller||!source.room.controller.reservation)){
             if(creep.store.getFreeCapacity(RESOURCE_ENERGY)>0&&source.energy>0){
                 if(creep.harvest(source) == ERR_NOT_IN_RANGE) {
                     creep.moveTo(source,{visualizePathStyle:{stroke:'#ffffff'}});
@@ -10,6 +10,7 @@ let roleHarvester = {
         }
         else{
             creep.memory.source=null;
+            creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
         }
         let target = creep.pos.findClosestByRange(FIND_MY_CREEPS, {
             filter: (creep) => {

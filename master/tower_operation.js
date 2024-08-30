@@ -6,18 +6,14 @@ let towerOperation={
             for(let tower of towers){
                 let damaged_creep = tower.pos.findClosestByRange(FIND_MY_CREEPS, {
                     filter: (creep) => {
-                        return creep.hits < creep.hitsMax;
+                        return creep.hits/creep.hitsMax<0.5;
                     }
                 });
                 if(damaged_creep) {
                     tower.heal(damaged_creep);
                     continue;
                 }
-                let closest_hostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS,{
-                    filter:(creep)=>{
-                        return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
-                    }
-                });
+                let closest_hostile = tower.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
                 if(closest_hostile) {
                     tower.attack(closest_hostile);
                     continue;

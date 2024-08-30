@@ -9,18 +9,19 @@ let roleRepairer = {
         if(creep.memory.repairing){
             for(let name in Game.rooms){
                 let room=Game.rooms[name];
-                if(room.controller.my){
-                    let targets = room.find(FIND_STRUCTURES,{filter:{structureType:STRUCTURE_TOWER}});
-                    if(targets.length==0){
-                        targets = room.find(FIND_STRUCTURES,{
-                            filter:(structure)=>{
-                                return structure.structureType==STRUCTURE_CONTAINER&&structure.hits<structure.hitsMax;
-                            }
-                        });
+                let towers = room.find(FIND_STRUCTURES,{filter:{structureType:STRUCTURE_TOWER}});
+                if(towers.length==0){
+                    let targets = room.find(FIND_STRUCTURES,{
+                        filter:(structure)=>{
+                            return (structure.structureType==STRUCTURE_CONTAINER||structure.structureType==STRUCTURE_ROAD)&&structure.hits<structure.hitsMax;
+                        }
+                    });
+                    targets.sort((a,b)=>{return a.hits-b.hits});
+                    if(targets.length>0){
                         if(creep.repair(targets[0])==ERR_NOT_IN_RANGE){
                             creep.moveTo(targets[0], {visualizePathStyle: {stroke: '#ffffff'}});
                         }
-                    }
+                    }                    
                 }
             }
         }
@@ -38,7 +39,7 @@ let roleRepairer = {
                 }
             }
             else{
-                creep.moveTo(new RoomPosition(23,8,'W7N7'));
+                creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
             }
         }
     }

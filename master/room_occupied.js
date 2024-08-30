@@ -1,6 +1,6 @@
 let roomOccupied={
     run:function(){
-        let occupied_rooms=['W7N6','W6N7','W9N7','W7N8','W6N9','W5N8'];
+        let occupied_rooms=['W7N6','W6N7','W9N7','W7N8','W6N9'];
         Memory.occupied_rooms=occupied_rooms;
         let has_explorer={};
         for(let name of occupied_rooms){

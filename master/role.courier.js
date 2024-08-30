@@ -14,17 +14,6 @@ let roleCourier={
             let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
             if(spawn)creep.memory.return_spawn_name=spawn.name;
         }
-        if(Memory.run_away){
-            let tower=creep.pos.findClosestByRange(STRUCTURE_TOWER);
-            if(tower){
-                creep.moveTo(tower);
-                return;
-            }
-            else{
-                creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
-                return;
-            }
-        }
         if(creep.memory.delivering){
             creep.memory.time++;
             let destination=Game.getObjectById(creep.memory.destination);
@@ -71,9 +60,9 @@ let roleCourier={
                         creep.memory.destination=target.id;
                     }
                     else{
-                        creep.moveTo(Game.spawns['Spawn1']);
+                        creep.moveTo(Game.spawns[creep.memory.return_spawn_name]);
                     }
-                }  
+                }
                 destination=Game.getObjectById(creep.memory.destination);
                 if(destination)roleCourier.run(creep);
             }
@@ -95,7 +84,7 @@ let roleCourier={
                 if(recycling&&recycling.store.getUsedCapacity()>0){
                     for(let resource_type in recycling.store){
                         if(creep.withdraw(recycling, resource_type) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(recycling, {visualizePathStyle: {stroke: '#ffffff'},reusePath:50});
+                            creep.moveTo(recycling, {visualizePathStyle: {stroke: '#ffffff'},reusePath:10});
                             break;
                         }
                     }
@@ -105,31 +94,30 @@ let roleCourier={
                     let drops=Game.getObjectById(creep.memory.drops);//再撿漏
                     if(drops&&drops.amount>0){
                         if(creep.pickup(drops) == ERR_NOT_IN_RANGE) {
-                            creep.moveTo(drops, {visualizePathStyle: {stroke: '#ffffff'},reusePath:50});
+                            creep.moveTo(drops, {visualizePathStyle: {stroke: '#ffffff'},reusePath:10});
                         }
                     }
                     else{
                         creep.memory.drops=null;
-                        //creep.moveTo(customer, {visualizePathStyle: {stroke: '#ffffff'},reusePath:50});
+                        //creep.moveTo(customer, {visualizePathStyle: {stroke: '#ffffff'},reusePath:10});
                         //最後才去收能源
-                        if(customer.store[RESOURCE_ENERGY]<10&&customer.memory.targeted>Memory.harvester_courier_rate){
+                        if(customer.store[RESOURCE_ENERGY]<10&&customer.memory.targeted>Memory.harvester_courier_rate-1){
                             creep.memory.customer=null;
                             customer.memory.targeted--;
                         }
                         else{
-                            creep.moveTo(customer, {visualizePathStyle: {stroke: '#ffffff'},reusePath:50});
+                            creep.moveTo(customer, {visualizePathStyle: {stroke: '#ffffff'},reusePath:10});
                         }
                     }
                 }  
             }
             else{
-                //找沒人看上的能源最多的採集者
                 if(!creep.memory.return_spawn_name){
                     let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
                     if(spawn)creep.memory.return_spawn_name=spawn.name;
-                    else creep.memory.return_spawn_name='Spawn1';
                 }
-                let targets =_.filter(Game.creeps,(target)=>target.memory.role == 'harvester'&&target.memory.targeted<Memory.harvester_courier_rate);
+                //找沒人看上的能源最多的採集者
+                let targets =_.filter(Game.creeps,(target)=>target.memory.role == 'harvester'&&target.memory.source&&target.memory.targeted<Memory.harvester_courier_rate);
                 targets.sort((a,b)=>{
                     return (3*b.store[RESOURCE_ENERGY]/Memory.source_path_length[creep.memory.return_spawn_name][b.memory.source])-(3*a.store[RESOURCE_ENERGY]/Memory.source_path_length[creep.memory.return_spawn_name][a.memory.source]);
                 });

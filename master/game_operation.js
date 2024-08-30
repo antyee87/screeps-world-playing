@@ -16,7 +16,7 @@ let gameOperation={
             towers_count+=towers.length;
             if(towers.length==0&&structures.length>0)no_tower_rooms_count++;
         }
-        let invader_cores_count=0,hostile_creeps_count=0,danger_couriers_count=0;//敵人撿查
+        let invader_cores_count=0,hostile_creeps_count=0;//敵人撿查
         for(let name in Game.rooms){
             let room=Game.rooms[name];
             let invader_cores = room.find(FIND_STRUCTURES, {
@@ -24,28 +24,36 @@ let gameOperation={
                     return (structure.structureType == STRUCTURE_INVADER_CORE)
                 }
             });
-            let hostile_creeps = room.find(FIND_HOSTILE_CREEPS,{filter:(creep)=>{
-                    return (creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0);
+            let hostile_creeps = room.find(FIND_HOSTILE_CREEPS,{filter:(creep)=>creep.getActiveBodyparts(ATTACK)>0||creep.getActiveBodyparts(RANGED_ATTACK)>0||creep.getActiveBodyparts(HEAL)>0});
+            if(hostile_creeps.length>0){
+                let towers=room.find(FIND_MY_STRUCTURES,{filter:{structureType:STRUCTURE_TOWER}});
+                if(towers.length==0){
+                    let creeps = _.filter(Game.creeps,(creep)=>creep.room==room);
+                    for(let creep of creeps){
+                        if(creep.memory.role){
+                            if(creep.memory.role=='harvester'){
+                                creep.memory.source=null;
+                            }
+                            if(creep.memory.role=='courier'){
+                                creep.memory.customer=null;
+                            }
+                        }
+                        creep.moveTo(Game.getObjectById(creep.memory.return_tower_id));
+                    }
                 }
-            });
-            if(hostile_creeps.length>0)danger_couriers_count += room.find(FIND_MY_CREEPS,{filter:{memory:{role:'courier'}}}).length;
+            }
             
             invader_cores_count+=invader_cores.length;
             hostile_creeps_count+=hostile_creeps.length;
         }
-       
-        if(hostile_creeps_count>0&&danger_couriers_count>0){//逃跑模式 避免大規模死傷
-            Memory.run_away=true;
-        }
-        else Memory.run_away=false;
 
         const kits=['killer','withdrawer','upgrader','harvester','courier','charger','builder','repairer','balancer','cleaner'];
         
-        Memory.harvester_courier_rate=2.5;//每隻採集者分幾隻搬運工
+        Memory.harvester_courier_rate=1.5;//每隻採集者分幾隻搬運工
         let limit={
             harvester:Memory.total_sources,
             builder:4,
-            upgrader:9,
+            upgrader:4,
             charger:towers_count,
             repairer:no_tower_rooms_count,
             courier:Math.round(Memory.total_sources*Memory.harvester_courier_rate),
@@ -55,33 +63,29 @@ let gameOperation={
             balancer:5
         }
         
-        let sites;//沒有建築就不生建築者
-        for(let name in Game.rooms){
-            sites=Game.rooms[name].find(FIND_CONSTRUCTION_SITES);
-            if(sites.length>0)break;
-        }
-        if(sites.length==0)limit['builder']=0;
+        if(Object.keys(Game.constructionSites).length==0)limit['builder']=0;//沒有建築就不生建築者
         
-        let couriers =_.filter(Game.creeps,(creep)=>creep.memory.role=='courier'&&(!creep.ticksToLive||creep.ticksToLive>50));
+        let couriers =_.filter(Game.creeps,(creep)=>creep.memory.role=='courier'&&(!creep.ticksToLive||creep.ticksToLive>100));
         if(!Memory.fighting_phase)Memory.fighting_phase='idle';
         if(Memory.fighting_phase!='prepare'&&couriers.length!=0)limit['withdrawer']=0;//準備出兵或沒有搬運工時的應急措施
 
-        let storages=[];
-        for(let name in Game.rooms){
-            let room=Game.rooms[name];
-            if(room.storage)storages.push(room.storage.id);
+        if(Game.time%30==0){
+            let storages=[];
+            for(let name in Game.rooms){
+                let room=Game.rooms[name];
+                if(room.storage)storages.push({id:room.storage.id,store:room.storage.store[RESOURCE_ENERGY]});
+            }            
+            storages.sort((a,b)=>a.store-b.store);
+            Memory.storages=storages;
+            if(storages[storages.length-1].store/storages[0].store<=1.5)limit['balancer']=0//容器能量平衡
         }
-        storages.sort((a,b)=>{
-            Game.getObjectById(a).store[RESOURCE_ENERGY]-Game.getObjectById(b).store[RESOURCE_ENERGY];
-        });
-        if(Game.getObjectById(storages[storages.length-1]).store[RESOURCE_ENERGY]/Game.getObjectById(storages[0]).store[RESOURCE_ENERGY]<=1.5)limit['balancer']=0//容器能量平衡
-
+        
         const body_type={
             harvester:'harvester',
             builder:'builder',
             upgrader:'upgrader',
             charger:'default',
-            repairer:'default',
+            repairer:'builder',
             courier:'courier',
             killer:'killer',
             cleaner:'cleaner',
@@ -90,20 +94,20 @@ let gameOperation={
         }
         const body_content={
             default:[WORK,WORK,CARRY,CARRY,MOVE,MOVE],
-            upgrader:[WORK,WORK,WORK,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE],
+            upgrader:[WORK,WORK,WORK,WORK,WORK,WORK,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE],
             builder:[WORK,WORK,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE],
-            harvester:[WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE],
-            courier:[CARRY,CARRY,MOVE,MOVE],
-            killer:[TOUGH,TOUGH,TOUGH,MOVE,MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK,RANGED_ATTACK,RANGED_ATTACK,HEAL,HEAL],
+            harvester:[WORK,WORK,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE],
+            courier:[CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE],
+            killer:[TOUGH,TOUGH,TOUGH,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK,RANGED_ATTACK,RANGED_ATTACK,HEAL,HEAL],
             cleaner:[MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,ATTACK,ATTACK,ATTACK,ATTACK,ATTACK,ATTACK,ATTACK,ATTACK],
-            balancer:[CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE]
+            balancer:[CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,CARRY,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE,MOVE]
         }
         let creeps={};
         let line=0;
         let count={};
         let respawn=false;
         for(let kit of kits){
-            creeps[kit] =_.filter(Game.creeps,(creep)=>creep.memory.role==kit&&(!creep.ticksToLive||creep.ticksToLive>50));
+            creeps[kit] =_.filter(Game.creeps,(creep)=>creep.memory.role==kit&&(!creep.ticksToLive||creep.ticksToLive>100));
             count[kit]=creeps[kit].length;//職業人數計算
             if(count[kit]>0||limit[kit]>0){//顯示
                 for(let name in Game.rooms){
@@ -147,13 +151,13 @@ let gameOperation={
                 if(count[kit] < limit[kit]) {
                     let newName = kit + Game.time;
                     respawn=true;
-                    count[kit]++;
                     spawn.spawnCreep(creep_body,newName,{memory: {role:kit,working:true}});
                 }
+                if(spawn.spawning)break;
             } 
         }
         let unemployment_harvesters=_.filter(Game.creeps,(creep)=>creep.memory.role=='harvester'&&!creep.memory.source);
-        if(Game.time%20==0&&unemployment_harvesters.length>0){
+        if(Game.time%30==0&&unemployment_harvesters.length>0){
             source_distribute_result=gameOperation.source_distribute();//能量點分配
             Memory.total_sources=source_distribute_result.total_sources;
             Memory.sources=source_distribute_result.sources;
@@ -162,9 +166,7 @@ let gameOperation={
             let creep=Game.creeps[name];
             let source=Game.getObjectById(creep.memory.source);
             if(!source && creep.memory.role=='harvester'){
-                let spawn = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
-                let spawn_name;
-                if(spawn)spawn_name=spawn.name;
+                let spawn_name=creep.memory.return_spawn_name;
                 if(Memory.sources[spawn_name]&&Memory.sources[spawn_name].length>0){
                     creep.memory.source=Memory.sources[spawn_name][0];
                     for(let name in Memory.sources){
@@ -192,7 +194,7 @@ let gameOperation={
                 }
             });
             if(hostile_creeps.length>0)continue;//有敵人的房間的資源不納入分配
-            if(room.controller&&room.controller.reservation&&room.controller.reservation.username!='Ant_onio')continue;//被預定房間的資源不納入分配
+            if(room.controller&&room.controller.reservation&&room.controller.reservation.username!=Memory.username)continue;//被預定房間的資源不納入分配
             let sources=room.find(FIND_SOURCES);
             sources.forEach(obj=>{available_sources.push(obj.id)})
         }
@@ -203,7 +205,6 @@ let gameOperation={
                 if(!Memory.source_path_length[name][source]){
                     Memory.source_path_length[name][source]=findPathLength.find(Game.getObjectById(source).pos,Game.spawns[name].pos);
                 }
-            
             }
         }
         let sorted_sources={};
@@ -215,7 +216,7 @@ let gameOperation={
         let source_user={};
         let total_sources=0;
         let source_weight={};
-        let harvesters= _.filter(Game.creeps,(creep)=>creep.memory.role=='harvester'&&(!creep.ticksToLive||creep.ticksToLive>50));
+        let harvesters= _.filter(Game.creeps,(creep)=>creep.memory.role=='harvester'&&(!creep.ticksToLive||creep.ticksToLive>100));
         for(let id of available_sources){
             source_user[id]=0;
         }
@@ -285,7 +286,7 @@ let gameOperation={
                 controller_upgrader_count[room.controller.id]=0;
             }
         }
-        let upgraders=_.filter(Game.creeps,(creep)=>creep.memory.role=='upgrader'&&(!creep.ticksToLive||creep.ticksToLive>50));
+        let upgraders=_.filter(Game.creeps,(creep)=>creep.memory.role=='upgrader'&&(!creep.ticksToLive||creep.ticksToLive>100));
         for(let creep of upgraders){
             let controller=Game.getObjectById(creep.memory.upgrade_controller)
             if(controller){
@@ -314,7 +315,7 @@ let gameOperation={
                 tower_charger_count[obj.id]=0;
             });
         }
-        let chargers=_.filter(Game.creeps,(creep)=>creep.memory.role=='charger'&&(!creep.ticksToLive||creep.ticksToLive>50));
+        let chargers=_.filter(Game.creeps,(creep)=>creep.memory.role=='charger'&&(!creep.ticksToLive||creep.ticksToLive>100));
         for(let creep of chargers){
             let tower = Game.getObjectById(creep.memory.charge_tower);
             if(tower){
@@ -335,6 +336,9 @@ let gameOperation={
     },
     recycling_drops_distribute:function(){
         let tombstones,ruins,drops;
+        if(!Memory.recycling_reserve)Memory.recycling_reserve={};
+        if(!Memory.drop_reserve)Memory.drop_reserve={};
+        
         for(let name in Game.rooms){
             let room = Game.rooms[name];
             tombstones=room.find(FIND_TOMBSTONES,{filter:(tombstone)=>{
@@ -354,6 +358,7 @@ let gameOperation={
                 if(creep){
                     creep.memory.recycling=tombstone.id;
                     Memory.recycling_reserve[tombstone.id]+=creep.store.getFreeCapacity();
+                    return;
                 }
             }
             for(let ruin of ruins){
@@ -364,6 +369,7 @@ let gameOperation={
                 if(creep){
                     creep.memory.recycling=ruin.id;
                     Memory.recycling_reserve[ruin.id]+=creep.store.getFreeCapacity();
+                    return;
                 }
             } 
             for(let drop of drops){
@@ -374,6 +380,7 @@ let gameOperation={
                 if(creep){
                     creep.memory.drops=drop.id;
                     Memory.drop_reserve[drop.id]+=creep.store.getFreeCapacity();
+                    return;
                 }
             }
         }   
