@@ -60,7 +60,7 @@ let gameOperation={
             killer:hostile_creeps_count,
             cleaner:invader_cores_count,
             withdrawer:2,
-            balancer:5
+            balancer:10
         }
         
         if(Object.keys(Game.constructionSites).length==0)limit['builder']=0;//沒有建築就不生建築者
@@ -77,9 +77,8 @@ let gameOperation={
             }            
             storages.sort((a,b)=>a.store-b.store);
             Memory.storages=storages;
-            if(storages[storages.length-1].store/storages[0].store<=1.5)limit['balancer']=0//容器能量平衡
         }
-        
+        if(Memory.storages[Memory.storages.length-1].store/Memory.storages[0].store<=1.5)limit['balancer']=0//容器能量平衡
         const body_type={
             harvester:'harvester',
             builder:'builder',
